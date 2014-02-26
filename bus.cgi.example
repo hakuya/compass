@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+# Set (1) and (2), then copy this file into your cgi-bin directory
+
+# (1) Set these
+COMPASS_PATH = '/path/to/compass/lib'
+GTFS_DB_PATH = '/path/to/db/created/with/gtfs_loader.db'
+
+# (2) Stop sets work as aliases for browsing multiple stops at the same time
+STOP_SETS = {
+    # home is the default set displayed when no stop or set is specified
+    'home' : [ '1234' ],
+    # define any number of sets below
+    'example' : [ '1234', '5678' ],
+}
+
+# enable debugging
+import cgitb
+cgitb.enable()
+
+import sys
+sys.path.append( COMPASS_PATH )
+
+import cgi
+import view
+import model
+
+model.init( GTFS_DB_PATH )
+
+print "Content-Type: text/plain;charset=utf-8"
+print
+
+form = cgi.FieldStorage()
+if( form.has_key( 'loc' ) ):
+    
+    value = form['loc'].value
+
+    if( STOP_SETS.has_key( value ) ):
+        stops = STOP_SETS[value]
+    else:
+        stops = [ value ]
+
+else:
+    stops = STOP_SETS['home']
+
+for stop, route, name, time in view.ping_stop( stops ):
+    print '%s: %02d:%02d - Route %s' % (
+        stop, time / 3600, (time / 60) % 60, name )
